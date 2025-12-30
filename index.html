@@ -218,38 +218,30 @@
     <div class="reload-trigger" id="reloadTrigger"></div>
 
     <script>
-        // Флаг для отслеживания, была ли уже выполнена загрузка
         let hasLoaded = false;
         let imagesPreloaded = false;
         
-        // Проверка ориентации устройства
         function checkOrientation() {
             const orientationWarning = document.getElementById('orientationWarning');
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
             if (isMobile) {
                 if (window.innerWidth < window.innerHeight) {
-                    // Портретная ориентация
                     orientationWarning.classList.add('visible');
                     document.body.style.overflow = 'hidden';
                 } else {
-                    // Альбомная ориентация
                     orientationWarning.classList.remove('visible');
                     document.body.style.overflow = 'hidden';
                     
-                    // Если это мобильное устройство и мы в альбомной ориентации, и еще не загружали
                     if (!hasLoaded) {
                         hasLoaded = true;
-                        // Запускаем загрузку изображений
                         startImageLoading();
                     }
                 }
             } else {
-                // На десктопе всегда показываем контент
                 orientationWarning.classList.remove('visible');
                 document.body.style.overflow = 'hidden';
                 
-                // На десктопе загружаем сразу
                 if (!hasLoaded) {
                     hasLoaded = true;
                     startImageLoading();
@@ -257,19 +249,15 @@
             }
         }
         
-        // Слушаем изменение ориентации
         window.addEventListener('resize', checkOrientation);
         window.addEventListener('orientationchange', function() {
-            // Небольшая задержка для надежности
             setTimeout(checkOrientation, 100);
         });
         
-        // Инициализация проверки ориентации
         checkOrientation();
         
-        // Генерируем пути к 57 фотографиям с именами от "1 (1).webp" до "1 (57).webp"
         const webpImages = [];
-        const jpgImages = []; // Для сохранения
+        const jpgImages = [];
         for (let i = 1; i <= 57; i++) {
             webpImages.push(`foto/1 (${i}).webp`);
             jpgImages.push(`foto/1 (${i}).jpg`);
@@ -288,9 +276,7 @@
         const progressContainer = document.getElementById('progressContainer');
         const loadingText = document.getElementById('loadingText');
         
-        // Функция для запуска загрузки изображений
         function startImageLoading() {
-            // Проверяем существование файла 0.webp и предзагружаем все изображения
             const baseImage = new Image();
             baseImage.onload = baseImage.onerror = () => {
                 preloadAllImages();
@@ -298,7 +284,6 @@
             baseImage.src = 'foto/0.webp';
         }
         
-        // Предзагрузка всех изображений в кэш
         function preloadAllImages() {
             const totalImages = webpImages.length;
             let loadedImages = 0;
@@ -313,11 +298,9 @@
                     
                     if (loadedImages === totalImages) {
                         imagesPreloaded = true;
-                        // Скрываем прогресс-бар и текст после загрузки
                         setTimeout(() => {
                             progressContainer.classList.add('hidden');
                             loadingText.classList.add('hidden');
-                            // Показываем кнопку и добавляем обработчик
                             buttonContainer.classList.remove('button-hidden');
                             buttonContainer.classList.add('button-visible');
                             mainButton.onclick = stopSlideshow;
@@ -329,16 +312,13 @@
             });
         }
         
-        // Функция для обновления изображения
         function updateImage() {
             if (isLoading || !imagesPreloaded) return;
             
             isLoading = true;
             
-            // Начинаем затухание текущего изображения
             activeLayer.classList.add('fade-out');
             
-            // После завершения затухания, устанавливаем новое изображение
             setTimeout(() => {
                 const currentSrc = webpImages[currentImageIndex];
                 activeLayer.style.backgroundImage = `url('${currentSrc}')`;
@@ -348,30 +328,24 @@
             }, 100);
         }
         
-        // Функция для запуска смены изображений
         function startSlideshow() {
             if (!isRunning) {
                 isRunning = true;
                 intervalId = setInterval(updateImage, 100); // 0.1 секунды
-                mainButton.textContent = 'Выбор';
+                mainButton.textContent = 'Твоё новогоднее предсказание';
                 buttonContainer.classList.remove('button-bottom');
-                buttonContainer.innerHTML = '<button class="btn" id="mainButton">Выбор</button>';
-                // Переназначаем обработчик
+                buttonContainer.innerHTML = '<button class="btn" id="mainButton">Твоё новогоднее предсказание</button>';
                 document.getElementById('mainButton').onclick = stopSlideshow;
             }
         }
         
-        // Функция для запуска цикла после предзагрузки
         function startSlideshowLoop() {
-            // Устанавливаем первое изображение
             activeLayer.style.backgroundImage = `url('${webpImages[0]}')`;
             currentImageIndex = 1;
             
-            // Запускаем смену изображений
             intervalId = setInterval(updateImage, 100);
         }
         
-        // Функция для остановки смены изображений
         function stopSlideshow() {
             if (isRunning) {
                 isRunning = false;
@@ -380,26 +354,21 @@
                 
                 buttonContainer.classList.add('button-bottom');
                 buttonContainer.innerHTML = `
-                    <button class="btn btn-save" id="saveButton">Сохранить</button>
+                    <button class="btn btn-save" id="saveButton">Сохранить предсказание</button>
                 `;
                 
-                // Назначаем обработчик для новой кнопки
                 document.getElementById('saveButton').onclick = saveImage;
             }
         }
         
-        // Функция для сохранения изображения как JPG
         function saveImage() {
-            // Получаем соответствующий JPG файл для текущего изображения
             const currentJpgIndex = currentImageIndex - 1 >= 0 ? currentImageIndex - 1 : webpImages.length - 1;
             
-            // Создаем ссылку для скачивания с правильными атрибутами
             const link = document.createElement('a');
             link.href = jpgImages[currentJpgIndex];
             link.download = "Твоё новогоднее предсказание.jpg";
             link.style.display = 'none';
             
-            // Добавляем в документ, кликаем и удаляем
             document.body.appendChild(link);
             link.click();
             setTimeout(() => {
@@ -407,7 +376,6 @@
             }, 100);
         }
         
-        // Дополнительная проверка ориентации при загрузке
         window.addEventListener('load', checkOrientation);
     </script>
 </body>
