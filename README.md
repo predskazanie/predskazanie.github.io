@@ -1,1 +1,0 @@
-# predskazanie.github.io
