@@ -185,6 +185,14 @@
             margin-bottom: 20px;
             transform: rotate(90deg);
         }
+        
+        .reload-trigger {
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            width: 1px;
+            height: 1px;
+        }
     </style>
 </head>
 <body>
@@ -206,8 +214,14 @@
     <div class="button-container button-hidden" id="buttonContainer">
         <button class="btn" id="mainButton">Твоё новогоднее предсказание</button>
     </div>
+    
+    <div class="reload-trigger" id="reloadTrigger"></div>
 
     <script>
+        // Флаг для отслеживания, была ли уже выполнена загрузка
+        let hasLoaded = false;
+        let imagesPreloaded = false;
+        
         // Проверка ориентации устройства
         function checkOrientation() {
             const orientationWarning = document.getElementById('orientationWarning');
@@ -222,17 +236,33 @@
                     // Альбомная ориентация
                     orientationWarning.classList.remove('visible');
                     document.body.style.overflow = 'hidden';
+                    
+                    // Если это мобильное устройство и мы в альбомной ориентации, и еще не загружали
+                    if (!hasLoaded) {
+                        hasLoaded = true;
+                        // Запускаем загрузку изображений
+                        startImageLoading();
+                    }
                 }
             } else {
                 // На десктопе всегда показываем контент
                 orientationWarning.classList.remove('visible');
                 document.body.style.overflow = 'hidden';
+                
+                // На десктопе загружаем сразу
+                if (!hasLoaded) {
+                    hasLoaded = true;
+                    startImageLoading();
+                }
             }
         }
         
         // Слушаем изменение ориентации
         window.addEventListener('resize', checkOrientation);
-        window.addEventListener('orientationchange', checkOrientation);
+        window.addEventListener('orientationchange', function() {
+            // Небольшая задержка для надежности
+            setTimeout(checkOrientation, 100);
+        });
         
         // Инициализация проверки ориентации
         checkOrientation();
@@ -249,7 +279,6 @@
         let isRunning = true;
         let intervalId = null;
         let isLoading = false;
-        let imagesPreloaded = false;
         const imageCache = {};
         
         const activeLayer = document.getElementById('activeLayer');
@@ -258,6 +287,16 @@
         const progressBar = document.getElementById('progressBar');
         const progressContainer = document.getElementById('progressContainer');
         const loadingText = document.getElementById('loadingText');
+        
+        // Функция для запуска загрузки изображений
+        function startImageLoading() {
+            // Проверяем существование файла 0.webp и предзагружаем все изображения
+            const baseImage = new Image();
+            baseImage.onload = baseImage.onerror = () => {
+                preloadAllImages();
+            };
+            baseImage.src = 'foto/0.webp';
+        }
         
         // Предзагрузка всех изображений в кэш
         function preloadAllImages() {
@@ -367,16 +406,6 @@
                 document.body.removeChild(link);
             }, 100);
         }
-        
-        // Проверяем существование файла 0.webp и предзагружаем все изображения
-        const baseImage = new Image();
-        baseImage.onload = baseImage.onerror = () => {
-            // Проверяем ориентацию перед загрузкой
-            if (!document.getElementById('orientationWarning').classList.contains('visible')) {
-                preloadAllImages();
-            }
-        };
-        baseImage.src = 'foto/0.webp';
         
         // Дополнительная проверка ориентации при загрузке
         window.addEventListener('load', checkOrientation);
