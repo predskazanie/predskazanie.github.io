@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Твоё новогоднее предсказание</title>
+    <link href="icong.ico" rel="icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+            background: #000;
+        }
+        
+        .image-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .base-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+            background-image: url('foto/0.webp');
+        }
+        
+        .active-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 2;
+            opacity: 1;
+            transition: opacity 0.1s ease-in-out;
+        }
+        
+        .active-layer.fade-out {
+            opacity: 0;
+        }
+        
+        .button-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        
+        .button-bottom {
+            top: auto;
+            bottom: 50px;
+            transform: translateX(-50%);
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+		 
+		 @media (min-width: 950px) {
+                .btn {
+                    font-size: 38px;
+                }
+        }
+		
+        .btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-save {
+            background: rgba(255, 255, 255, 0.9);
+            margin-top: 10px;
+        }
+        
+        .buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .progress-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            z-index: 5;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #ff0000; /* Красный цвет */
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+        
+        .loading-text {
+            position: absolute;
+            top: calc(50% - 70px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            z-index: 5;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .button-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .button-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .orientation-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .orientation-warning.visible {
+            display: flex;
+        }
+        
+        .rotate-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="orientation-warning" id="orientationWarning">
+        <div class="rotate-icon">📱</div>
+        <div>Пожалуйста, поверните устройство в горизонтальное положение</div>
+    </div>
+    
+    <div class="image-container" id="imageContainer">
+        <div class="base-layer"></div>
+        <div class="active-layer" id="activeLayer"></div>
+        <div class="loading-text" id="loadingText">Загрузка изображений...</div>
+    </div>
+    
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <div class="button-container button-hidden" id="buttonContainer">
+        <button class="btn" id="mainButton">Твоё новогоднее предсказание</button>
+    </div>
+
+    <script>
+        // Проверка ориентации устройства
+        function checkOrientation() {
+            const orientationWarning = document.getElementById('orientationWarning');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                if (window.innerWidth < window.innerHeight) {
+                    // Портретная ориентация
+                    orientationWarning.classList.add('visible');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    // Альбомная ориентация
+                    orientationWarning.classList.remove('visible');
+                    document.body.style.overflow = 'hidden';
+                }
+            } else {
+                // На десктопе всегда показываем контент
+                orientationWarning.classList.remove('visible');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        // Слушаем изменение ориентации
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', checkOrientation);
+        
+        // Инициализация проверки ориентации
+        checkOrientation();
+        
+        // Генерируем пути к 57 фотографиям с именами от "1 (1).webp" до "1 (57).webp"
+        const webpImages = [];
+        const jpgImages = []; // Для сохранения
+        for (let i = 1; i <= 57; i++) {
+            webpImages.push(`foto/1 (${i}).webp`);
+            jpgImages.push(`foto/1 (${i}).jpg`);
+        }
+        
+        let currentImageIndex = 0;
+        let isRunning = true;
+        let intervalId = null;
+        let isLoading = false;
+        let imagesPreloaded = false;
+        const imageCache = {};
+        
+        const activeLayer = document.getElementById('activeLayer');
+        const buttonContainer = document.getElementById('buttonContainer');
+        const mainButton = document.getElementById('mainButton');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const loadingText = document.getElementById('loadingText');
+        
+        // Предзагрузка всех изображений в кэш
+        function preloadAllImages() {
+            const totalImages = webpImages.length;
+            let loadedImages = 0;
+            
+            webpImages.forEach((src, index) => {
+                const img = new Image();
+                img.onload = img.onerror = () => {
+                    loadedImages++;
+                    imageCache[src] = img;
+                    const progress = (loadedImages / totalImages) * 100;
+                    progressBar.style.width = progress + '%';
+                    
+                    if (loadedImages === totalImages) {
+                        imagesPreloaded = true;
+                        // Скрываем прогресс-бар и текст после загрузки
+                        setTimeout(() => {
+                            progressContainer.classList.add('hidden');
+                            loadingText.classList.add('hidden');
+                            // Показываем кнопку и добавляем обработчик
+                            buttonContainer.classList.remove('button-hidden');
+                            buttonContainer.classList.add('button-visible');
+                            mainButton.onclick = stopSlideshow;
+                            startSlideshowLoop();
+                        }, 300);
+                    }
+                };
+                img.src = src;
+            });
+        }
+        
+        // Функция для обновления изображения
+        function updateImage() {
+            if (isLoading || !imagesPreloaded) return;
+            
+            isLoading = true;
+            
+            // Начинаем затухание текущего изображения
+            activeLayer.classList.add('fade-out');
+            
+            // После завершения затухания, устанавливаем новое изображение
+            setTimeout(() => {
+                const currentSrc = webpImages[currentImageIndex];
+                activeLayer.style.backgroundImage = `url('${currentSrc}')`;
+                activeLayer.classList.remove('fade-out');
+                isLoading = false;
+                currentImageIndex = (currentImageIndex + 1) % webpImages.length;
+            }, 100);
+        }
+        
+        // Функция для запуска смены изображений
+        function startSlideshow() {
+            if (!isRunning) {
+                isRunning = true;
+                intervalId = setInterval(updateImage, 100); // 0.1 секунды
+                mainButton.textContent = 'Выбор';
+                buttonContainer.classList.remove('button-bottom');
+                buttonContainer.innerHTML = '<button class="btn" id="mainButton">Выбор</button>';
+                // Переназначаем обработчик
+                document.getElementById('mainButton').onclick = stopSlideshow;
+            }
+        }
+        
+        // Функция для запуска цикла после предзагрузки
+        function startSlideshowLoop() {
+            // Устанавливаем первое изображение
+            activeLayer.style.backgroundImage = `url('${webpImages[0]}')`;
+            currentImageIndex = 1;
+            
+            // Запускаем смену изображений
+            intervalId = setInterval(updateImage, 100);
+        }
+        
+        // Функция для остановки смены изображений
+        function stopSlideshow() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(intervalId);
+                intervalId = null;
+                
+                buttonContainer.classList.add('button-bottom');
+                buttonContainer.innerHTML = `
+                    <button class="btn btn-save" id="saveButton">Сохранить</button>
+                `;
+                
+                // Назначаем обработчик для новой кнопки
+                document.getElementById('saveButton').onclick = saveImage;
+            }
+        }
+        
+        // Функция для сохранения изображения как JPG
+        function saveImage() {
+            // Получаем соответствующий JPG файл для текущего изображения
+            const currentJpgIndex = currentImageIndex - 1 >= 0 ? currentImageIndex - 1 : webpImages.length - 1;
+            
+            // Создаем ссылку для скачивания с правильными атрибутами
+            const link = document.createElement('a');
+            link.href = jpgImages[currentJpgIndex];
+            link.download = "Твоё новогоднее предсказание.jpg";
+            link.style.display = 'none';
+            
+            // Добавляем в документ, кликаем и удаляем
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 100);
+        }
+        
+        // Проверяем существование файла 0.webp и предзагружаем все изображения
+        const baseImage = new Image();
+        baseImage.onload = baseImage.onerror = () => {
+            // Проверяем ориентацию перед загрузкой
+            if (!document.getElementById('orientationWarning').classList.contains('visible')) {
+                preloadAllImages();
+            }
+        };
+        baseImage.src = 'foto/0.webp';
+        
+        // Дополнительная проверка ориентации при загрузке
+        window.addEventListener('load', checkOrientation);
+    </script>
+</body>
+</html>
